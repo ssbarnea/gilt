@@ -1,0 +1,48 @@
+---
+language: python
+branches:
+  only:
+    - master
+    - /v[0-9]+\.[0-9]+\.[0-9]+(-.*)?$/
+
+cache:
+  - pip
+  - directories:
+      - $HOME/.cache
+os:
+  - linux
+before_install:
+  - which tox >/dev/null || if [ -z ${VIRTUAL_ENV+x} ]; then python -m pip install --user tox tox-pyenv wheel ; else python -m pip install tox tox-pyenv wheel twine; fi
+jobs:
+  include:
+    - script:
+        # package building added here purely to fail-fast if is broken
+        - python setup.py sdist bdist_wheel
+        - twine check dist/*.*
+        - python -m tox
+      env: TOXENV=py27-unit
+      python: "2.7"
+    - script:
+        - python -m tox
+      env: TOXENV=py36-unit
+      python: "3.6"
+    - script:
+        - python -m tox
+      env: TOXENV=py27-lint
+      python: "2.7"
+    - script:
+        - python -m tox
+      env: TOXENV=py36-lint
+      python: "3.6"
+    - script:
+        - python -m tox
+      env: TOXENV=doc
+      python: "3.6"
+    - script: python -m pip install -q tox-travis && python -m tox
+      python: "3.7"
+      env: TOXENV=py37-unit PYTHON='3.7'
+      dist: xenial
+      sudo: required
+env:
+  global:
+    - PIP_DISABLE_PIP_VERSION_CHECK=1
